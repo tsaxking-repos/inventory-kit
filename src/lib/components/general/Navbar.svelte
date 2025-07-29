@@ -2,7 +2,6 @@
 	import SideNav from './SideNav.svelte';
 	import Notifications from './Notifications.svelte';
 	import { Account } from '$lib/model/account';
-	import { onMount } from 'svelte';
 	interface Props {
 		title: string;
 	}
@@ -42,7 +41,7 @@
 					<i class="material-icons">account_circle</i>
 				</button>
 				<ul
-					class="dropdown-menu"
+					class="dropdown-menu animate__animated animate__fadeInDown animate__faster"
 					style="
 					position: fixed;
 					top: 52px;
@@ -53,12 +52,11 @@
 					{#if $self.data.username === 'guest'}
 						<li><a class="dropdown-item" href="/account/sign-in">Sign In</a></li>
 					{:else}
-						<!-- <li><a class="dropdown-item" href="/account/profile">Profile</a></li> -->
 						<li><a class="dropdown-item" href="/account/sign-out">Sign Out</a></li>
 					{/if}
 				</ul>
 			</div>
-			<!-- <button
+			<button
 				class="me-5 btn position-relative"
 				type="button"
 				data-bs-toggle="offcanvas"
@@ -72,10 +70,10 @@
 						<span class="visually-hidden">unread messages</span>
 					</span>
 				{/if}
-			</button> -->
+			</button>
 		</div>
 	</div>
 </nav>
 <SideNav id="pages" />
 
-<!-- <Notifications bind:notifs /> -->
+<Notifications bind:notifs />
