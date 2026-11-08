@@ -86,9 +86,6 @@ export const load = async (event) => {
 	return {
 		supabase,
 		session,
-		is_mentor: event.data.is_mentor,
-		is_student: event.data.is_student,
-		is_viewer: event.data.is_viewer,
 		profile: event.data.profile ? Profile.Generator(event.data.profile) : null,
 		notifications,
 		env: event.data.env

@@ -313,7 +313,7 @@ export type SupaErrorCode =
  * @example
  * throw new SupaError('unauthorized', 'The current user cannot read this table');
  */
-class SupaError extends Error {
+export class SupaError extends Error {
 	/**
 	 * Error code describing the failure classification.
 	 */
@@ -809,8 +809,8 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 	/**
 	 * Shared registry of active table structs keyed by schema and table name.
 	 */
-	// eslint-disable-next-line svelte/prefer-svelte-reactivity
-	public static readonly structs = new Map<
+
+	public static readonly structs = new SvelteMap<
 		string,
 		SupaStruct<RowSchemaName, RowTableNames<RowSchemaName>>
 	>();
@@ -1778,13 +1778,6 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 				.insert(hydrated.map((d) => d.raw as any));
 
 			if (error) {
-				if (error.message.toLowerCase().includes('query returned no rows')) {
-					this.log(
-						'Insert returned no rows; keeping local hydrated rows and treating write as successful',
-						error
-					);
-					return hydrated;
-				}
 				this.log('Error inserting new row:', error);
 				for (const item of hydrated) item['_deleteLocal']();
 				throw new Error(`Failed to insert new row: ${error.message}`);
@@ -2375,7 +2368,7 @@ class SupaQuery<
 					count: reactive.length
 				};
 			}
-			const built = this.build('exact');
+			const built = this.build();
 			const from = (page - 1) * size;
 			const to = from + size - 1;
 			const res = await built.query.range(from, to);
@@ -2388,14 +2381,14 @@ class SupaQuery<
 				RowName,
 				Required
 			>[];
-			const count = res.count ?? hydrated.length;
-			if (page === 1 && count <= size) {
+
+			if (page === 1 && result.length === 0) {
 				await this.pruneStaleDexieRows(result as any);
 			}
 
 			return {
 				data: hydrated.filter((data) => this.matches_filter(data)),
-				count
+				count: res.count ?? hydrated.length
 			};
 		});
 	}
@@ -2492,13 +2485,13 @@ class SupaQuery<
 				table: this.struct.table
 			}).first();
 
-			if (cached.isOk() && cached.value) {
-				if (cached.value.raw.version !== QUERY_CACHE_VERSION) {
-					await cached.value.delete();
-					// } else if (Date.now() - cached.value.raw.last_sync <= ttl) {
-					// 	return this.reactive;
-				}
-			}
+			// if (cached.isOk() && cached.value) {
+			// 	if (cached.value.raw.version !== QUERY_CACHE_VERSION) {
+			// 		await cached.value.delete();
+			// 	} else if (Date.now() - cached.value.raw.last_sync <= ttl) {
+			// 		return this.reactive;
+			// 	}
+			// }
 			this.state = 'pulling';
 
 			const built = this.build();
@@ -3068,10 +3061,10 @@ class JoinQuery<
 				schema: this.struct.schema,
 				table: this.struct.table
 			}).first();
-			if (cached.isOk() && cached.value) {
-				if (cached.value.raw.version !== QUERY_CACHE_VERSION) await cached.value.delete();
-				else if (Date.now() - cached.value.raw.last_sync <= ttl) return this.reactive;
-			}
+			// if (cached.isOk() && cached.value) {
+			// 	if (cached.value.raw.version !== QUERY_CACHE_VERSION) await cached.value.delete();
+			// 	else if (Date.now() - cached.value.raw.last_sync <= ttl) return this.reactive;
+			// }
 			const hydrated = await this.fetch_all().unwrap();
 			await QueryCache.upsert({
 				query: query_key,

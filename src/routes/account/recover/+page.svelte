@@ -11,21 +11,33 @@
 	const passwordResult = $derived(passwordStrength(password));
 
 	onMount(async () => {
-		const hash = window.location.hash;
+		const url = new URL(window.location.href);
+		const hash_params = new URLSearchParams(url.hash.slice(1));
+		const access_token = hash_params.get('access_token');
+		const refresh_token = hash_params.get('refresh_token');
+		const code = url.searchParams.get('code') ?? hash_params.get('code');
 
-		const params = new URLSearchParams(hash.replace('#', ''));
-
-		const access_token = params.get('access_token');
-		const refresh_token = params.get('refresh_token');
-
-		if (!access_token || !refresh_token) {
-			return console.error('No access token or refresh token found in URL');
+		if (code) {
+			const { error } = await data.supabase.auth.exchangeCodeForSession(code);
+			if (error) {
+				alert('There was an error exchanging the code for a session. Please try again later.');
+				return console.error(error);
+			}
+		} else if (access_token && refresh_token) {
+			const { error } = await data.supabase.auth.setSession({
+				access_token,
+				refresh_token
+			});
+			if (error) {
+				alert(
+					'There was an error restoring your session. Please request a new password reset email.'
+				);
+				return console.error(error);
+			}
+		} else {
+			alert('No code, access token, or refresh token found in URL');
+			return console.error('No code, access token, or refresh token found in URL');
 		}
-
-		await data.supabase.auth.setSession({
-			access_token,
-			refresh_token
-		});
 	});
 
 	const resetPassword = async () => {
